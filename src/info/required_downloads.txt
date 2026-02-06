@@ -1,0 +1,16 @@
+# required_downloads.txt for Gemboi's Gmod Server Helper
+
+
+# Example:
+SteamCMD - https://developer.valvesoftware.com/wiki/SteamCMD
+Crowbar - https://steamcommunity.com/groups/CrowbarTool
+Garry's Mod Workshop items - Provide links or IDs as needed
+
+# Garry's Mod Workshop items:
+# Use the following format for each item:
+# Workshop ID: <ID>  (e.g., Workshop ID: 2404009525)
+# Workshop Link: https://steamcommunity.com/sharedfiles/filedetails/?id=<ID>
+# Workshop ID: 2404009525
+# Workshop Link: https://steamcommunity.com/sharedfiles/filedetails/?id=2404009525
+
+
