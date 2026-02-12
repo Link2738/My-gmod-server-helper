@@ -1,0 +1,169 @@
+================================================================================
+  POINTSHOP ITEM FILE FORMAT SPECIFICATION
+  For use with the batch model Python script
+================================================================================
+
+There are 3 item types, each goes in a different folder and uses a different
+base file. The filename (without .lua) becomes the item's internal ID.
+Filenames must be lowercase, no spaces, alphanumeric + underscores only.
+
+--------------------------------------------------------------------------------
+OUTPUT FOLDERS (relative to pointshop addon root):
+--------------------------------------------------------------------------------
+  Accessory:          lua/pointshop/items/accessories/
+  Victim Playermodel: lua/pointshop/items/playermodels_victims/
+  Bear Playermodel:   lua/pointshop/items/playermodels_bears/
+
+================================================================================
+1. ACCESSORY
+================================================================================
+Base include:   local BASE = include("pointshop/sh_accessory_base.lua") or {}
+
+REQUIRED FIELDS:
+  ITEM.Name       (string)  Display name in the shop. Must be unique.
+  ITEM.Price      (number)  Cost in points.
+  ITEM.Model      (string)  Model path, e.g. 'models/props/hat.mdl'
+  ITEM.TYPE       (string)  Always 'accessory'
+
+ATTACHMENT - use ONE of these (not both):
+  ITEM.Bone       (string)  Bone name to attach to.
+  ITEM.Attachment  (string)  Attachment point name to attach to.
+
+  Common bones:
+    ValveBiped.Bip01_Head1       -- head
+    ValveBiped.Bip01_Spine2      -- upper back / chest
+    ValveBiped.Bip01_Spine       -- lower back
+    ValveBiped.Bip01_R_Hand      -- right hand
+    ValveBiped.Bip01_L_Hand      -- left hand
+    ValveBiped.Bip01_R_Foot      -- right foot
+    ValveBiped.Bip01_L_Foot      -- left foot
+
+  Common attachments:
+    eyes        -- between the eyes
+    anim_attachment_RH  -- right hand
+    anim_attachment_LH  -- left hand
+
+OPTIONAL FIELDS:
+  ITEM.DefaultModifications (table) Default customization. All fields optional:
+    scale     (number)  Model scale. Range: 0.1 - 2.0. Default: 1
+    offsetX   (number)  Forward/back offset. Range: -30 to 30. Default: 0
+    offsetY   (number)  Left/right offset. Range: -30 to 30. Default: 0
+    offsetZ   (number)  Up/down offset. Range: -30 to 30. Default: 0
+    rotation  (number)  Rotation around Up axis. Range: 0 - 360. Default: 0
+    axis      (string)  Rotation axis: "Right", "Up", or "Forward". Default: "Right"
+    axisDeg   (number)  Degrees on that axis. Range: -180 to 180. Default: -90
+    color     Color(r,g,b,a)  Tint color. Default: Color(255, 255, 255, 255)
+
+FOOTER (always include):
+  for k, v in pairs(BASE) do
+      ITEM[k] = v
+  end
+
+================================================================================
+2. VICTIM PLAYERMODEL
+================================================================================
+Base include:   local BASE = include("pointshop/sh_playermodel_base.lua")
+
+REQUIRED FIELDS:
+  ITEM.Name       (string)  Display name in the shop. Must be unique.
+  ITEM.Price      (number)  Cost in points.
+  ITEM.Model      (string)  Model path, e.g. 'models/player/character.mdl'
+  ITEM.TYPE       (string)  Always 'playermodel'
+  ITEM.Bodygroups (table)   Map of bodygroup name -> { id = N, values = { 0, 1, ... } }
+                             Get these from the model's QC or by inspecting in-game.
+                             If the model has no bodygroups, use an empty table: {}
+
+OPTIONAL FIELDS:
+  ITEM.DefaultModifications (table) Default customization:
+    skin         (number)  Default skin index. Default: 0
+    bodygroups   (table)   Map of bodygroup id -> default value, e.g. { [1] = 0, [2] = 1 }
+    playercolor  Vector(r,g,b)  Player color (0-1 range). Default: Vector(1, 1, 1)
+
+FOOTER (always include):
+  for k, v in pairs(BASE) do
+      ITEM[k] = v
+  end
+
+NOTE: Victim models go in playermodels_victims/ folder.
+      Team restriction is handled by the __category.lua (TEAM_VICTIMS = 1).
+
+================================================================================
+3. BEAR PLAYERMODEL
+================================================================================
+Identical format to Victim Playermodel above.
+
+ONLY DIFFERENCE:
+  - File goes in playermodels_bears/ folder instead.
+  - Team restriction is handled by __category.lua (TEAM_PEDO = 2, TEAM_INFTPEDO = 3).
+
+================================================================================
+PYTHON SCRIPT GENERATION NOTES
+================================================================================
+- Filename: derive from ITEM.Name, lowercased, spaces replaced with underscores,
+  special chars stripped. Example: "Genshin Lisa Edit" -> genshinlisaedit.lua
+- The ITEM.Name should be a clean display name (can have spaces/caps in the shop).
+- ITEM.Model path must use forward slashes and be lowercase.
+- Bodygroups: your QC parser should extract bodygroup names and value ranges.
+  Format each as: ["GroupName"] = { id = N, values = { 0, 1, 2 } }
+  where N is the bodygroup index (starting at 1, since 0 is usually the base body).
+- Skin count: if model has multiple skins, set skin = 0 in defaults and the
+  customization panel will let the user cycle through them in-game.
+- For accessories, the script should prompt for Bone or Attachment since it
+  cannot be auto-detected from the model.
+- DefaultModifications for playermodels should list ALL bodygroups with default
+  value 0 in the bodygroups sub-table.
+
+================================================================================
+EXAMPLE: COMPLETE GENERATED VICTIM PLAYERMODEL
+================================================================================
+local BASE = include("pointshop/sh_playermodel_base.lua")
+
+ITEM.Name = 'genshin_impact_lisa_edit'
+ITEM.Price = 1000
+ITEM.Model = 'models/lisa/player/genshin_impact_lisa_edit.mdl'
+ITEM.TYPE = 'playermodel'
+ITEM.Bodygroups = {
+    ["hat"] = { id = 1, values = { 0, 1 } },
+    ["earring"] = { id = 2, values = { 0, 1 } },
+    ["hair"] = { id = 3, values = { 0 } },
+}
+
+ITEM.DefaultModifications = {
+    skin = 0,
+    bodygroups = {
+        [1] = 0,
+        [2] = 0,
+        [3] = 0,
+    },
+    playercolor = Vector(1, 1, 1)
+}
+
+for k, v in pairs(BASE) do
+    ITEM[k] = v
+end
+
+================================================================================
+EXAMPLE: COMPLETE GENERATED ACCESSORY
+================================================================================
+local BASE = include("pointshop/sh_accessory_base.lua") or {}
+
+ITEM.Name = 'Jump Pack'
+ITEM.Price = 1000
+ITEM.Model = 'models/xqm/jetengine.mdl'
+ITEM.Bone = 'ValveBiped.Bip01_Spine2'
+ITEM.TYPE = 'accessory'
+
+ITEM.DefaultModifications = {
+    scale = 0.5,
+    offsetX = 6,
+    offsetY = 5,
+    offsetZ = 0,
+    rotation = 0,
+    axis = "Right",
+    axisDeg = 0,
+    color = Color(255, 255, 255, 255)
+}
+
+for k, v in pairs(BASE) do
+    ITEM[k] = v
+end

@@ -1,3 +1,4 @@
+import re
 import requests
 from bs4 import BeautifulSoup
 
@@ -12,7 +13,6 @@ def parse_collection_items(collection_id_or_url, log_callback=None):
         url: str = f"https://steamcommunity.com/sharedfiles/filedetails/?id={collection_id}"
     else:
         url: str = collection_id_or_url
-        import re
         match: re.Match | None = re.search(r'id=(\d+)', url)
         if match:
             collection_id: str = match.group(1)
@@ -26,7 +26,6 @@ def parse_collection_items(collection_id_or_url, log_callback=None):
         response: requests.Response = requests.get(url)
         response.raise_for_status()
         soup: BeautifulSoup = BeautifulSoup(response.text, 'html.parser')
-        import re
         item_ids: list[str] = []
         # Look for <div class="workshopItem"> with direct <a href=...> children
         for item_div in soup.find_all('div', class_='workshopItem'):
@@ -51,109 +50,8 @@ import subprocess
 
 def download_workshop_item(steamcmd_path, workshop_id, output_dir, log_callback=None):
     """
-    Downloads a GMod workshop item using SteamCMD.
-    Returns the path to the downloaded .gma file, or None on failure.
-    """
-    if not os.path.isfile(steamcmd_path):
-        if log_callback:
-            log_callback(f"[ERROR] SteamCMD not found at: {steamcmd_path}")
-        return None
-    if not workshop_id.isdigit():
-        if log_callback:
-            log_callback(f"[ERROR] Invalid workshop ID: {workshop_id}")
-        return None
-    steamcmd_dir = os.path.dirname(steamcmd_path)
-    steamapps_dir = os.path.join(steamcmd_dir, 'steamapps', 'workshop', 'content', '4000')
-    os.makedirs(output_dir, exist_ok=True)
-    workshop_folder = os.path.join(output_dir, 'workshop_download', workshop_id)
-    if os.path.isdir(workshop_folder):
-        for f in os.listdir(workshop_folder):
-            file_path = os.path.join(workshop_folder, f)
-            if os.path.isfile(file_path) and f.lower().endswith('.gma'):
-                try:
-                    os.remove(file_path)
-                    if log_callback:
-                        log_callback(f"[DEBUG] Deleted old .gma file before download: {f}")
-                except Exception as e:
-                    if log_callback:
-                        log_callback(f"[ERROR] Failed to delete old .gma file {f}: {e}")
-    else:
-        os.makedirs(workshop_folder, exist_ok=True)
-    try:
-        if log_callback:
-            log_callback(f"[SteamCMD] Running steamcmd.exe in background...")
-        cmd = [steamcmd_path, '+login', 'anonymous', '+workshop_download_item', '4000', workshop_id, '+quit']
-        proc = subprocess.Popen(cmd, cwd=steamcmd_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        stdout, stderr = proc.communicate()
-        if log_callback:
-            log_callback(f"[SteamCMD Output]:\n{stdout}")
-            if stderr:
-                log_callback(f"[SteamCMD Error]:\n{stderr}")
-        found_gma_files = []
-        already_copied = set()
-        if os.path.isdir(steamapps_dir):
-            for root, dirs, files in os.walk(steamapps_dir):
-                for fname in files:
-                    if fname.endswith('.gma'):
-                        src = os.path.normpath(os.path.join(root, fname))
-                        if fname == 'temp.gma' or workshop_id in fname:
-                            if fname in already_copied:
-                                continue
-                            already_copied.add(fname)
-                            dst = os.path.normpath(os.path.join(workshop_folder, fname))
-                            if not os.path.exists(dst):
-                                shutil.copy2(src, dst)
-                            if fname == 'temp.gma':
-                                renamed_dst = os.path.normpath(os.path.join(workshop_folder, f'{workshop_id}.gma'))
-                                try:
-                                    if os.path.exists(renamed_dst):
-                                        os.remove(renamed_dst)
-                                    os.replace(dst, renamed_dst)
-                                    dst = renamed_dst
-                                    if log_callback:
-                                        log_callback(f"[SteamCMD] Renamed temp.gma to {workshop_id}.gma")
-                                except Exception as e:
-                                    if log_callback:
-                                        log_callback(f"[ERROR] Failed to rename temp.gma: {e}")
-                            found_gma_files.append(dst)
-                            if log_callback:
-                                log_callback(f"[SteamCMD] Downloaded and copied to {workshop_folder}: {os.path.basename(dst)}")
-        gma_file = None
-        renamed_gma_files = []
-        if found_gma_files:
-            for idx, original_gma in enumerate(found_gma_files, start=1):
-                renamed_gma = os.path.join(workshop_folder, f'{workshop_id}_{idx}.gma')
-                try:
-                    os.replace(original_gma, renamed_gma)
-                    renamed_gma_files.append(renamed_gma)
-                    if log_callback:
-                        log_callback(f"[SteamCMD] Renamed {os.path.basename(original_gma)} to {workshop_id}_{idx}.gma")
-                except Exception as e:
-                    renamed_gma_files.append(original_gma)
-                    if log_callback:
-                        log_callback(f"[ERROR] Failed to rename {os.path.basename(original_gma)}: {e}")
-            if log_callback:
-                log_callback(f"[DEBUG] Renamed .gma files: {renamed_gma_files}\nUsing: {renamed_gma_files[0] if renamed_gma_files else None}")
-            gma_file = renamed_gma_files[0] if renamed_gma_files and os.path.isfile(renamed_gma_files[0]) else None
-        else:
-            if log_callback:
-                log_callback(f"[ERROR] No .gma file found after SteamCMD run.\nChecked path: {steamapps_dir}")
-        return gma_file
-    except Exception as e:
-        if log_callback:
-            log_callback(f"[ERROR] SteamCMD failed: {e}")
-        return None
-"""
-SteamCMD Workshop/Collection downloader module
-"""
-import subprocess
-import os
-
-def download_workshop_item(steamcmd_path, workshop_id, output_dir, log_callback=None):
-    """
     Downloads a single workshop item using SteamCMD and returns the path to the downloaded .gma file, or None on failure.
     """
-    import shutil
     if not steamcmd_path or not os.path.isfile(steamcmd_path):
         if log_callback:
             log_callback("[ERROR] SteamCMD path is invalid.")
@@ -169,14 +67,13 @@ def download_workshop_item(steamcmd_path, workshop_id, output_dir, log_callback=
     if os.path.isdir(workshop_folder):
         for f in os.listdir(workshop_folder):
             file_path = os.path.join(workshop_folder, f)
-            if os.path.isfile(file_path) and f.lower().endswith('.gma'):
+            if os.path.isfile(file_path) and f.lower().endswith(('.gma', '.bin')):
                 try:
                     os.remove(file_path)
                 except Exception:
                     pass
     else:
         os.makedirs(workshop_folder, exist_ok=True)
-    import subprocess
     try:
         if log_callback:
             log_callback(f"[SteamCMD] Running steamcmd.exe in background...")
@@ -187,22 +84,22 @@ def download_workshop_item(steamcmd_path, workshop_id, output_dir, log_callback=
             log_callback(f"[SteamCMD Output]:\n{stdout}")
             if stderr:
                 log_callback(f"[SteamCMD Error]:\n{stderr}")
-        # Find the downloaded .gma file
+        # Find the downloaded .gma/.bin file
         found_gma_files = []
         already_copied = set()
         if os.path.isdir(steamapps_dir):
             for root, dirs, files in os.walk(steamapps_dir):
                 for fname in files:
-                    if fname.endswith('.gma'):
+                    if fname.endswith(('.gma', '.bin')):
                         src = os.path.normpath(os.path.join(root, fname))
-                        if fname == 'temp.gma' or workshop_id in fname:
+                        if fname in ('temp.gma', 'temp.bin') or workshop_id in fname:
                             if fname in already_copied:
                                 continue
                             already_copied.add(fname)
                             dst = os.path.normpath(os.path.join(workshop_folder, fname))
                             if not os.path.exists(dst):
                                 shutil.copy2(src, dst)
-                            if fname == 'temp.gma':
+                            if fname in ('temp.gma', 'temp.bin'):
                                 renamed_dst = os.path.normpath(os.path.join(workshop_folder, f'{workshop_id}.gma'))
                                 try:
                                     if os.path.exists(renamed_dst):
@@ -268,7 +165,6 @@ def download_collection(steamcmd_path, collection_ids, output_dir, log_callback=
     try:
         if log_callback:
             log_callback(f"[SteamCMD] Running single session for {len(item_ids)} items...")
-        import subprocess
         proc = subprocess.Popen(cmd, cwd=steamcmd_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         stdout, stderr = proc.communicate()
         if log_callback:
@@ -282,15 +178,14 @@ def download_collection(steamcmd_path, collection_ids, output_dir, log_callback=
             item_dir = os.path.join(steamapps_dir, workshop_id)
             if os.path.isdir(item_dir):
                 for fname in os.listdir(item_dir):
-                    if fname.endswith('.gma'):
+                    if fname.endswith(('.gma', '.bin')):
                         src = os.path.join(item_dir, fname)
                         dst_folder = os.path.join(workshop_folder, workshop_id)
                         os.makedirs(dst_folder, exist_ok=True)
                         dst = os.path.join(dst_folder, fname)
-                        import shutil
                         shutil.copy2(src, dst)
                         # Optionally rename temp.gma
-                        if fname == 'temp.gma':
+                        if fname in ('temp.gma', 'temp.bin'):
                             renamed_dst = os.path.join(dst_folder, f'{workshop_id}.gma')
                             try:
                                 if os.path.exists(renamed_dst):
@@ -298,10 +193,10 @@ def download_collection(steamcmd_path, collection_ids, output_dir, log_callback=
                                 os.replace(dst, renamed_dst)
                                 dst = renamed_dst
                                 if log_callback:
-                                    log_callback(f"[SteamCMD] Renamed temp.gma to {workshop_id}.gma")
+                                    log_callback(f"[SteamCMD] Renamed {fname} to {workshop_id}.gma")
                             except Exception as e:
                                 if log_callback:
-                                    log_callback(f"[ERROR] Failed to rename temp.gma: {e}")
+                                    log_callback(f"[ERROR] Failed to rename {fname}: {e}")
                         item_gma_files.append(dst)
                         if log_callback:
                             log_callback(f"[SteamCMD] Downloaded and copied to {dst_folder}: {os.path.basename(dst)}")
@@ -309,7 +204,7 @@ def download_collection(steamcmd_path, collection_ids, output_dir, log_callback=
                 gma_files.append(item_gma_files[0])
             else:
                 if log_callback:
-                    log_callback(f"[ERROR] No .gma file found for workshop item {workshop_id}")
+                    log_callback(f"[ERROR] No .gma/.bin file found for workshop item {workshop_id}")
         return gma_files
     except Exception as e:
         if log_callback:

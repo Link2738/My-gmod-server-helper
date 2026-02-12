@@ -34,7 +34,6 @@ def decompile_mdl(mdl_path, crowbar_path, out_dir, log_callback=None):
             if stderr:
                 log_callback(f"[Crowbar Error]:\n{stderr}")
     except Exception as e:
-        e: Exception
         if log_callback:
             log_callback(f"[ERROR] Crowbar decompiling failed: {e}")
         return None
