@@ -2,14 +2,14 @@
 
 1. Install Required Python Packages
    - Open a terminal in the workspace directory.
-   - Run: `pip install -r src/info/requirements.txt`
+   - Run: `pip install -r info/requirements.txt`
 
 2. Download Required Tools
-   - See `src/info/required_downloads.txt` for SteamCMD, Crowbar, and workshop items.
+   - See `info/required_downloads.txt` for SteamCMD, Crowbar, and workshop items.
    - Download and place executables as needed.
 
 3. Launch the GUI
-   - Run: `python src/main_gui.py` or right-click main_gui.py and run with python
+   - Run: `python main_gui.py` or right-click main_gui.py and run with python
 
 4. Using the GUI
    - Select the input type: File, Folder, Workshop, or Collection.
