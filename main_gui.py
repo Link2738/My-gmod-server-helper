@@ -1805,7 +1805,7 @@ class GMAExtractorGUI:
                         workshop_id = id_match.group(1)
 
                     if use_steamcmd:
-                        gma_file = download_workshop_item(steamcmd_path, workshop_id, output_dir, log_callback, app_id=app_id)
+                        gma_file = download_workshop_item(steamcmd_path, workshop_id, output_dir, self._append_log, app_id=app_id)
                     else:
                         self._append_log(f'[INFO] Looking for workshop item {workshop_id} in Steam library...')
                         gma_file = find_workshop_in_steam(self.steam_path.get(), app_id, workshop_id, output_dir, self._append_log)
@@ -1846,7 +1846,7 @@ class GMAExtractorGUI:
                         return
 
                     if use_steamcmd:
-                        gma_files = download_collection(steamcmd_path, input_path, output_dir, log_callback, app_id=app_id)
+                        gma_files = download_collection(steamcmd_path, input_path, output_dir, self._append_log, app_id=app_id)
                     else:
                         self._append_log(f'[INFO] Looking for {len(item_ids)} collection item(s) in Steam library...')
                         gma_files = []
