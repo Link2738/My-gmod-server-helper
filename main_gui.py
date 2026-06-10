@@ -24,7 +24,7 @@ from smd_parser import remove_weapon_bones_from_qc
 from lua_writer import write_pointshop_lua, ensure_category_file, write_autorun_lua, _PM_TYPES
 from config import load_last_paths, save_last_paths, load_custom_keywords, save_custom_keywords, load_cleaner_keywords, save_cleaner_keywords
 from steamcmd_downloader import download_workshop_item, download_collection, detect_steam_path, find_workshop_in_steam
-from vtf_resizer import read_vtf_dimensions, resize_vtf, clamp_dimensions
+from vtf_resizer import read_vtf_dimensions, resize_vtf, clamp_dimensions, clamp_vtfs_in_tree
 from resource_gen import generate_resource_file, merge_content_into_fastdl
 from vmt_validator import scan_vmts, fix_vmts
 from fastdl_checker import preflight
@@ -642,6 +642,23 @@ class GMAExtractorGUI:
                 out_var.set(d)
         self._button(row2, 'Browse', _browse_out).pack(side='left', padx=(6, 0))
 
+        # ── Texture size clamp controls ───────────────────────────────
+        _POW2_CHOICES = ['No limit', '32', '64', '128', '256', '512', '1024', '2048', '4096']
+        tex_row = self._frame(dlg)
+        tex_row.pack(fill='x', padx=14, pady=(2, 4))
+        self._label(tex_row, 'Max tex width').pack(side='left')
+        _init_w = str(self.max_tex_w.get()) if self.max_tex_w.get() > 0 else 'No limit'
+        max_w_var = tk.StringVar(value=_init_w)
+        ttk.Combobox(tex_row, textvariable=max_w_var, values=_POW2_CHOICES,
+                     width=10, state='readonly').pack(side='left', padx=(4, 16))
+        self._label(tex_row, 'Max tex height').pack(side='left')
+        _init_h = str(self.max_tex_h.get()) if self.max_tex_h.get() > 0 else 'No limit'
+        max_h_var = tk.StringVar(value=_init_h)
+        ttk.Combobox(tex_row, textvariable=max_h_var, values=_POW2_CHOICES,
+                     width=10, state='readonly').pack(side='left', padx=(4, 0))
+        self._label(tex_row, '(0 = no clamp, requires VTFCmd in Settings)',
+                    fg='#666666', font=('Segoe UI', 8)).pack(side='left', padx=(8, 0))
+
         # ── Log area ─────────────────────────────────────────────────
         ttk.Separator(dlg, orient='horizontal').pack(fill='x', padx=14, pady=(4, 2))
         log_area = scrolledtext.ScrolledText(
@@ -668,6 +685,13 @@ class GMAExtractorGUI:
             mode       = mode_var.get()
             output_dir = out_var.get().strip()
 
+            # Texture clamp (persisted for next time); applied to served VTFs below.
+            max_w = 0 if max_w_var.get() == 'No limit' else int(max_w_var.get())
+            max_h = 0 if max_h_var.get() == 'No limit' else int(max_h_var.get())
+            self.max_tex_w.set(max_w)
+            self.max_tex_h.set(max_h)
+            vtfcmd_path = self.vtfcmd_path.get()
+
             if not output_dir:
                 dlog('[ERROR] No output folder selected.')
                 gen_btn.config(state='normal')
@@ -683,6 +707,9 @@ class GMAExtractorGUI:
 
                 def run_folder():
                     try:
+                        if max_w > 0 or max_h > 0:
+                            dlog('[VTF] ══ Clamping textures (edits this folder IN PLACE) ══')
+                            clamp_vtfs_in_tree(content_folder, vtfcmd_path, max_w, max_h, dlog)
                         dlog(f'[INFO] ══ Scanning folder: {content_folder} ══')
                         lua_path = generate_resource_file(
                             content_folder, output_dir,
@@ -745,6 +772,10 @@ class GMAExtractorGUI:
                     if count == 0:
                         dlog('[WARN] No downloadable content files found after extraction.')
                         return
+
+                    if max_w > 0 or max_h > 0:
+                        dlog(f'[INFO] ══ Clamping textures ══')
+                        clamp_vtfs_in_tree(fastdl_dir, vtfcmd_path, max_w, max_h, dlog)
 
                     dlog(f'[INFO] ══ Writing resource.lua ══')
                     lua_path = generate_resource_file(

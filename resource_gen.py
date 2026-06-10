@@ -23,10 +23,11 @@ CONTENT_EXTENSIONS = {
     'models':    {'.mdl', '.vvd', '.vtx', '.phy', '.ani'},
     'materials': {'.vmt', '.vtf', '.png', '.jpg', '.jpeg'},
     'sound':     {'.wav', '.mp3', '.ogg'},
-    # maps/.bsp are served automatically via sv_downloadurl — NOT via resource.AddFile()
-    # They still get copied into fastdl/ by merge_content_into_fastdl so the web host
-    # can serve them, but they must not appear in the lua.
-    'maps':      {'.png'},   # only thumbnails/overviews need resource.AddFile
+    # maps/.bsp ARE listed via resource.AddFile() so every map in a rotation
+    # (e.g. a mapvote) is pre-downloaded — sv_downloadurl alone only serves the
+    # currently-running map on demand. The .bsp is copied into fastdl/ as an opaque
+    # blob; its packed (pakfile) contents are never unpacked into loose files.
+    'maps':      {'.bsp', '.png'},   # .bsp + thumbnails/overviews
     'resource':  {'.ttf', '.otf'},
 }
 

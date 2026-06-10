@@ -60,7 +60,7 @@ def _extract_gma_from_fileobj(f, output_dir, log_callback=None):
             out_f.write(data)
         if entry['path'].endswith('.bsp'):
             if log_callback:
-                log_callback(f"EXCEPTION: .bsp file extracted: {entry['path']} ({entry['size']} bytes)")
+                log_callback(f"Wrote .bsp as-is (not unpacked): {entry['path']} ({entry['size']} bytes)")
         else:
             if log_callback:
                 log_callback(f"Extracted: {entry['path']} ({entry['size']} bytes)")
