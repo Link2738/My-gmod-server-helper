@@ -17,3 +17,16 @@ env/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Local runtime config (machine-specific paths, personal keyword maps)
+config/last_paths.json
+
+# Secrets / credentials
+.env
+*.env
+secrets.json
+credentials.json
+*.key
+*.pem
+*.token
+*.log
