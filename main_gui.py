@@ -317,7 +317,10 @@ class GMAExtractorGUI:
                 self.input_type.get(), self.input_paths,
                 self.output_dir.get(), self.write_bodygroups.get(),
                 self.steamcmd_path.get(), self.crowbarcli_path.get(),
-                self.game_choice.get(), self.steam_path.get())
+                self.game_choice.get(), self.steam_path.get(),
+                self.studiomdl_path.get(), self.vtfcmd_path.get(),
+                self.max_tex_w.get(), self.max_tex_h.get(),
+                self.model_namespace.get())
 
         self.input_type.trace_add('write', _on_type_change)
         self.input_path.trace_add('write', _on_path_change)
@@ -2906,7 +2909,8 @@ class GMAExtractorGUI:
                 self.output_dir.get(), self.write_bodygroups.get(),
                 self.steamcmd_path.get(), self.crowbarcli_path.get(),
                 self.game_choice.get(), self.steam_path.get(),
-                self.studiomdl_path.get(), vtfcmd_path, max_w, max_h)
+                self.studiomdl_path.get(), vtfcmd_path, max_w, max_h,
+                self.model_namespace.get())
 
             def run():
                 import shutil
