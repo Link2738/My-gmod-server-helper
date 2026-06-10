@@ -115,9 +115,73 @@ class GMAExtractorGUI:
         insertbg = kw.pop('insertbackground', self.FG)
         relief = kw.pop('relief', 'solid')
         bd = kw.pop('bd', 1)
-        return tk.Entry(parent, textvariable=textvariable,
-                        bg=bg, fg=fg, insertbackground=insertbg,
-                        font=font, relief=relief, bd=bd, **kw)
+        entry = tk.Entry(parent, textvariable=textvariable,
+                         bg=bg, fg=fg, insertbackground=insertbg,
+                         font=font, relief=relief, bd=bd, **kw)
+        self._enable_clipboard(entry)
+        return entry
+
+    def _enable_clipboard(self, entry):
+        """Attach explicit Ctrl+C/V/X/A handlers and a right-click menu to a
+        tk.Entry. Tk's default paste binding can silently fail depending on
+        keyboard locale/keysym, so we wire it manually (return 'break' avoids
+        double-handling when the default binding does fire)."""
+        def _selected():
+            if entry.selection_present():
+                return entry.get()[entry.index('sel.first'):entry.index('sel.last')]
+            return None
+
+        def paste(_e=None):
+            try:
+                text = entry.clipboard_get()
+            except tk.TclError:
+                return 'break'
+            if entry.selection_present():
+                entry.delete('sel.first', 'sel.last')
+            entry.insert('insert', text)
+            return 'break'
+
+        def copy(_e=None):
+            sel = _selected()
+            if sel is not None:
+                entry.clipboard_clear()
+                entry.clipboard_append(sel)
+            return 'break'
+
+        def cut(_e=None):
+            sel = _selected()
+            if sel is not None:
+                entry.clipboard_clear()
+                entry.clipboard_append(sel)
+                entry.delete('sel.first', 'sel.last')
+            return 'break'
+
+        def select_all(_e=None):
+            entry.select_range(0, 'end')
+            entry.icursor('end')
+            return 'break'
+
+        for seq, fn in (('<Control-v>', paste), ('<Control-V>', paste),
+                        ('<Control-c>', copy),  ('<Control-C>', copy),
+                        ('<Control-x>', cut),   ('<Control-X>', cut),
+                        ('<Control-a>', select_all), ('<Control-A>', select_all)):
+            entry.bind(seq, fn)
+
+        menu = tk.Menu(entry, tearoff=0)
+        menu.add_command(label='Cut', command=cut)
+        menu.add_command(label='Copy', command=copy)
+        menu.add_command(label='Paste', command=paste)
+        menu.add_separator()
+        menu.add_command(label='Select All', command=select_all)
+
+        def popup(e):
+            entry.focus_set()
+            try:
+                menu.tk_popup(e.x_root, e.y_root)
+            finally:
+                menu.grab_release()
+            return 'break'
+        entry.bind('<Button-3>', popup)
 
     def _button(self, parent, text, command, bg=None, fg=None, **kw):
         if bg:
