@@ -2800,7 +2800,7 @@ class GMAExtractorGUI:
                 mdl_stem       = os.path.splitext(os.path.basename(mdl_path))[0]
                 crowbar_outdir = os.path.join(staging_abs, '_clean_work',
                                               f'{idx:04d}_{mdl_stem}')
-                decompile_mdl(mdl_path, crowbarcli_path, crowbar_outdir, _log, quiet=True)
+                decompile_mdl(mdl_path, crowbarcli_path, crowbar_outdir, self._append_log, quiet=True)
                 qc_path = self.find_qc_file(crowbar_outdir)
                 signals = parse_qc_type_signals(qc_path) if qc_path else None
                 qc_cache[mdl_path] = {
@@ -2957,7 +2957,7 @@ class GMAExtractorGUI:
                     qc_path  = cached.get('qc_path')
                     if not qc_path:
                         self._append_log(f'[CLEAN]   decompiling (cache miss)...')
-                        decompile_mdl(mdl_path, crowbarcli_path, work_dir, _log, quiet=True)
+                        decompile_mdl(mdl_path, crowbarcli_path, work_dir, self._append_log, quiet=True)
                         qc_path = self.find_qc_file(work_dir)
                     if not qc_path:
                         self._append_log(f'[CLEAN] WARN: no QC found for {mdl_stem}, skipping')
@@ -3034,11 +3034,11 @@ class GMAExtractorGUI:
                             rewrite_smd_materials(smd, name_map)
                         rewrite_qc_texturegroup(qc_path, name_map)
 
-                    deduplicate_qc_animations(qc_path, _log)
+                    deduplicate_qc_animations(qc_path, self._append_log)
 
                     # Recompile
                     self._append_log(f'[CLEAN]   recompiling with studiomdl...')
-                    compiled = compile_qc(studiomdl_path, qc_path, game_dir, _log)
+                    compiled = compile_qc(studiomdl_path, qc_path, game_dir, self._append_log)
                     if not compiled:
                         self._append_log(f'[CLEAN]   ERROR: recompile failed for {mdl_stem}')
                         continue
@@ -3133,7 +3133,7 @@ class GMAExtractorGUI:
                                         new_w, new_h = clamp_dimensions(w, h, max_w, max_h)
                                         if (new_w, new_h) != (w, h):
                                             if vtfcmd_path and os.path.isfile(vtfcmd_path):
-                                                ok = resize_vtf(vtfcmd_path, out_file, new_w, new_h, _log)
+                                                ok = resize_vtf(vtfcmd_path, out_file, new_w, new_h, self._append_log)
                                                 final = read_vtf_dimensions(out_file) if ok else None
                                                 if ok and final:
                                                     self._append_log(f'[CLEAN] → {os.path.relpath(out_file, output)} [{w}×{h} → {final[0]}×{final[1]}]')
