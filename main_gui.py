@@ -30,7 +30,7 @@ from vmt_validator import scan_vmts, fix_vmts
 from fastdl_checker import preflight
 from smd_material_fixer import scan_decompiled, rewrite_smd_materials, clean_name, bad_names
 from studiomdl_compiler import find_studiomdl, compile_qc, copy_mdl_to_addon, default_game_dir
-from qc_parser import parse_qc_cdmaterials, rewrite_qc_texturegroup, rewrite_qc_cdmaterials, deduplicate_qc_animations, rewrite_qc_modelname
+from qc_parser import parse_qc_cdmaterials, rewrite_qc_texturegroup, rewrite_qc_cdmaterials, deduplicate_qc_animations, rewrite_qc_modelname, balance_qc_braces
 
 class GMAExtractorGUI:
     # ── Colour palette (Windows Aero) ──────────────────────────────────
@@ -2446,6 +2446,7 @@ class GMAExtractorGUI:
                     skipped += 1
                     continue
 
+                balance_qc_braces(qc_path, log)
                 compiled_mdl = compile_qc(studiomdl_path, qc_path, game_dir, log)
                 if not compiled_mdl:
                     self._append_log(f'[MATFIX WARN] Recompile failed for {mdl_stem}')
@@ -3103,6 +3104,7 @@ class GMAExtractorGUI:
                         rewrite_qc_texturegroup(qc_path, name_map)
 
                     deduplicate_qc_animations(qc_path, self._append_log)
+                    balance_qc_braces(qc_path, self._append_log)
 
                     # Recompile
                     self._append_log(f'[CLEAN]   recompiling with studiomdl...')

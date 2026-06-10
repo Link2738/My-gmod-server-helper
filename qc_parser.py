@@ -85,6 +85,71 @@ def deduplicate_qc_animations(qc_path, log_callback=None):
         return False
 
 
+def balance_qc_braces(qc_path, log_callback=None):
+    """
+    Repair a QC whose brace blocks are unbalanced by appending the missing
+    closing brace(s) at EOF.
+
+    Crowbar sometimes truncates the closing '}' of the trailing $keyvalues
+    block, which makes studiomdl fail with
+    "Keyvalue block missing matching braces." Braces inside // and /* */
+    comments and inside double-quoted strings are ignored.
+
+    Only acts when there are more '{' than '}' (the truncation case); does
+    nothing if balanced or if there are extra closers. Returns True if the
+    file was modified.
+    """
+    try:
+        with open(qc_path, 'r', encoding='utf-8', errors='replace') as f:
+            content = f.read()
+    except OSError:
+        return False
+
+    depth = 0
+    in_string = in_line_comment = in_block_comment = False
+    i, n = 0, len(content)
+    while i < n:
+        c = content[i]
+        nxt = content[i + 1] if i + 1 < n else ''
+        if in_line_comment:
+            if c == '\n':
+                in_line_comment = False
+        elif in_block_comment:
+            if c == '*' and nxt == '/':
+                in_block_comment = False
+                i += 1
+        elif in_string:
+            if c == '"':
+                in_string = False
+        elif c == '/' and nxt == '/':
+            in_line_comment = True
+            i += 1
+        elif c == '/' and nxt == '*':
+            in_block_comment = True
+            i += 1
+        elif c == '"':
+            in_string = True
+        elif c == '{':
+            depth += 1
+        elif c == '}':
+            depth -= 1
+        i += 1
+
+    if depth <= 0:
+        return False  # balanced, or has extra closers — don't guess
+
+    addition = ('' if content.endswith('\n') else '\n') + '}\n' * depth
+    try:
+        with open(qc_path, 'a', encoding='utf-8', newline='') as f:
+            f.write(addition)
+    except OSError:
+        return False
+    if log_callback:
+        log_callback(f'[QC FIX] Added {depth} missing closing brace(s) to '
+                     f'{os.path.basename(qc_path)}')
+    return True
+
+
 def rewrite_qc_cdmaterials(qc_path, cdmat_map):
     """Rewrite $cdmaterials paths using cdmat_map {old_path: new_path}."""
     try:
