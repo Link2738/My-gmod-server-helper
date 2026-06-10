@@ -10,9 +10,13 @@ Filenames must be lowercase, no spaces, alphanumeric + underscores only.
 --------------------------------------------------------------------------------
 OUTPUT FOLDERS (relative to pointshop addon root):
 --------------------------------------------------------------------------------
-  Accessory:          lua/pointshop/items/accessories/
-  Victim Playermodel: lua/pointshop/items/playermodels_victims/
-  Bear Playermodel:   lua/pointshop/items/playermodels_bears/
+  Accessory:                lua/pointshop/items/accessories/
+  Victim Playermodel:       lua/pointshop/items/playermodels_victims/
+  Bear Playermodel:         lua/pointshop/items/playermodels_bears/
+  VIP Victim Playermodel:   lua/pointshop/items/playermodels_victims_vip/
+  VIP Bear Playermodel:     lua/pointshop/items/playermodels_bears_vip/
+  Reserved Victim Model:    lua/pointshop/items/playermodels_victims_reserved/
+  Reserved Bear Model:      lua/pointshop/items/playermodels_bears_reserved/
 
 ================================================================================
 1. ACCESSORY
@@ -97,6 +101,62 @@ ONLY DIFFERENCE:
   - Team restriction is handled by __category.lua (TEAM_PEDO = 2, TEAM_INFTPEDO = 3).
 
 ================================================================================
+4. VIP VICTIM/BEAR PLAYERMODEL
+================================================================================
+Identical format to standard playermodels, with these additions:
+
+OPTIONAL FIELDS (common for VIP models with custom coloring):
+  ITEM.UseColor2Proxy  (boolean)  Set to true if model supports Color2 bodygroup coloring.
+                                   This enables advanced color customization in-game.
+
+VISIBILITY:
+  - VIP Victim models (playermodels_victims_vip/) are visible only to:
+    * VIP, VIP Max, Megadonator groups
+    * Staff with VIP perks (headmod+)
+  - VIP Bear models (playermodels_bears_vip/) follow the same rules.
+  - Category visibility is automatic (handled by __category.lua).
+
+EXAMPLE:
+  ITEM.Name = 'premium_model'
+  ITEM.Price = 5000
+  ITEM.Model = 'models/custom/premium.mdl'
+  ITEM.TYPE = 'playermodel'
+  ITEM.UseColor2Proxy = true  -- Enable Color2 customization
+  ITEM.Bodygroups = {
+      ["Hair"] = { id = 1, values = { 0, 1, 2 } },
+  }
+
+================================================================================
+5. RESERVED VICTIM/BEAR PLAYERMODEL
+================================================================================
+Reserved models are ONLY visible to specific players (by Steam ID).
+Each player only sees their own reserved models.
+
+REQUIRED FIELDS (in addition to standard playermodel fields):
+  ITEM.ReservedFor   (string or table)  Steam ID(s) of players who can see this model.
+                                          Single: "STEAM_0:0:12345678"
+                                          Multiple: { "STEAM_0:0:123", "STEAM_0:1:456" }
+  ITEM.AllowedTeam   (number)            Team restriction: 1 = TEAM_VICTIMS, 2 = TEAM_BEAR
+
+OPTIONAL FIELDS:
+  ITEM.UseColor2Proxy  (boolean)  Same as VIP models - enable Color2 coloring.
+
+VISIBILITY:
+  - Category only appears if player has at least one reserved model.
+  - Player only sees items where their Steam ID matches ITEM.ReservedFor.
+  - Useful for: contest winners, commissions, staff exclusives, Patreon rewards.
+
+EXAMPLE:
+  ITEM.Name = 'johnsmith_commission'
+  ITEM.Price = 0  -- Free for the reserved player
+  ITEM.Model = 'models/custom/johnsmith.mdl'
+  ITEM.TYPE = 'playermodel'
+  ITEM.ReservedFor = "STEAM_0:0:12345678"  -- Only this player sees it
+  ITEM.AllowedTeam = 1  -- Victims only
+  ITEM.UseColor2Proxy = true
+  ITEM.Bodygroups = {}
+
+================================================================================
 PYTHON SCRIPT GENERATION NOTES
 ================================================================================
 - Filename: derive from ITEM.Name, lowercased, spaces replaced with underscores,
@@ -134,6 +194,64 @@ ITEM.DefaultModifications = {
         [1] = 0,
         [2] = 0,
         [3] = 0,
+    },
+    playercolor = Vector(1, 1, 1)
+}
+
+for k, v in pairs(BASE) do
+    ITEM[k] = v
+end
+
+================================================================================
+EXAMPLE: VIP VICTIM PLAYERMODEL WITH COLOR2 PROXY
+================================================================================
+local BASE = include("pointshop/sh_playermodel_base.lua")
+
+ITEM.Name = 'premium_custom_model'
+ITEM.Price = 5000
+ITEM.Model = 'models/custom/premium.mdl'
+ITEM.TYPE = 'playermodel'
+ITEM.UseColor2Proxy = true  -- Enable Color2 bodygroup coloring
+ITEM.Bodygroups = {
+    ["Body"] = { id = 1, values = { 0, 1 } },
+    ["Hair"] = { id = 2, values = { 0, 1, 2 } },
+    ["Outfit"] = { id = 3, values = { 0, 1 } },
+}
+
+ITEM.DefaultModifications = {
+    skin = 0,
+    bodygroups = {
+        [1] = 0,
+        [2] = 0,
+        [3] = 0,
+    },
+    playercolor = Vector(1, 1, 1)
+}
+
+for k, v in pairs(BASE) do
+    ITEM[k] = v
+end
+
+================================================================================
+EXAMPLE: RESERVED VICTIM PLAYERMODEL
+================================================================================
+local BASE = include("pointshop/sh_playermodel_base.lua")
+
+ITEM.Name = 'johnsmith_exclusive'
+ITEM.Price = 0  -- Free for reserved player
+ITEM.Model = 'models/custom/johnsmith.mdl'
+ITEM.TYPE = 'playermodel'
+ITEM.ReservedFor = "STEAM_0:0:12345678"  -- Only this player can see/buy
+ITEM.AllowedTeam = 1  -- 1 = TEAM_VICTIMS
+ITEM.UseColor2Proxy = true
+ITEM.Bodygroups = {
+    ["Hair"] = { id = 1, values = { 0, 1, 2 } },
+}
+
+ITEM.DefaultModifications = {
+    skin = 0,
+    bodygroups = {
+        [1] = 0,
     },
     playercolor = Vector(1, 1, 1)
 }

@@ -20,12 +20,30 @@
    - Click "Extract && Generate Lua" to start processing.
    - Use "Abort" to stop the process (its still a bit jank) or "Copy Console Output" to copy logs.
 
-5. Troubleshooting
+5. Output Structure
+   - Generated Lua files are organized in a Pointshop-ready folder structure:
+     output_dir/lua/pointshop/items/[category]/
+   - Categories include: playermodels_victims, playermodels_bears, playermodels_victims_vip,
+     playermodels_bears_vip, playermodels_victims_reserved, playermodels_bears_reserved, accessories
+   - Simply drag the "lua" folder into your addon to install all generated items!
+
+6. Troubleshooting
    - Ensure all required tools and Python packages are installed.
    - Check the log output for errors or missing paths.
    - Update configuration as needed using the Config popup.
 
-6. Additional Notes
+7. Additional Notes
    - Workshop and Collection modes require SteamCMD and valid IDs.
    - Output files are organized in the selected output directory.
    - For help, refer to the instructions or contact the project maintainer.
+
+8. Proportion Trick Notes (Advanced)
+   - The proportions system can work in just about any Source game.
+   - Ensure the reference animation starts from the target animation biped.
+   - For best results, squash and stretch the model to fit as close to the target mesh as possible.
+
+9. Porting from Valve Games to GMod
+   - When porting from L4D2, TF2, HL2, etc., REMOVE weapon attachment bones.
+   - Weapon bones (weapon_bone, weapon_bone_L, ValveBiped.weapon_bone, etc.) can interfere with GMod's weapon system.
+   - These bones cause incorrect weapon rotations/positioning in GMod.
+   - Remove them from the QC ($definebone entries) before compiling for GMod.
